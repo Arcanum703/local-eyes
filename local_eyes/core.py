@@ -1,12 +1,15 @@
 """Load an image, ask Gemma 4 for JSON, validate it, retry once, cache it."""
 
 import hashlib
+import ipaddress
+import socket
 import io
 import json
 import os
 import re
 import time
 from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 from PIL import Image
@@ -17,6 +20,8 @@ from .schemas import DescribeResult, ExtractTextResult, ReadUiResult
 
 ROOT = Path(__file__).resolve().parent.parent
 MAX_SIDE = int(os.getenv("LOCAL_EYES_MAX_SIDE", "1600"))
+MAX_BYTES = 25 * 1024 * 1024
+Image.MAX_IMAGE_PIXELS = 50_000_000  # refuse decompression bombs
 
 PROMPTS = {
     "describe_image": (
@@ -65,21 +70,56 @@ class Cache:
             (self.dir / f"{key}.json").write_text(json.dumps(value, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+def _check_public_url(url: str) -> None:
+    """Block fetches to localhost / private networks unless explicitly allowed."""
+    if os.getenv("LOCAL_EYES_ALLOW_PRIVATE_URLS", "").lower() in ("1", "true", "yes"):
+        return
+    host = urlparse(url).hostname or ""
+    for info in socket.getaddrinfo(host, None):
+        ip = ipaddress.ip_address(info[4][0])
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+            raise ValueError(f"Refusing to fetch private address {host}")
+
+
 def load_image(path_or_url: str) -> bytes:
     if path_or_url.startswith(("http://", "https://")):
-        r = httpx.get(path_or_url, timeout=30, follow_redirects=True)
-        r.raise_for_status()
-        return r.content
-    p = Path(path_or_url).expanduser()
-    if not p.exists():
-        raise FileNotFoundError(f"No image at {p.resolve()}")
+        url = path_or_url
+        with httpx.Client(timeout=30) as client:
+            for _ in range(5):  # follow redirects manually, re-checking each hop
+                _check_public_url(url)
+                with client.stream("GET", url) as r:
+                    if r.is_redirect:
+                        url = str(r.url.join(r.headers["location"]))
+                        continue
+                    r.raise_for_status()
+                    data = b""
+                    for chunk in r.iter_bytes():
+                        data += chunk
+                        if len(data) > MAX_BYTES:
+                            raise ValueError("Image is larger than 25 MB")
+                    return data
+        raise ValueError("Too many redirects")
+    p = Path(path_or_url).expanduser().resolve()
+    root = os.getenv("LOCAL_EYES_ROOT")
+    if root and not p.is_relative_to(Path(root).expanduser().resolve()):
+        raise PermissionError(f"{p} is outside LOCAL_EYES_ROOT")
+    if not p.is_file():
+        raise FileNotFoundError(f"No image at {p}")
+    if p.stat().st_size > MAX_BYTES:
+        raise ValueError("Image is larger than 25 MB")
     return p.read_bytes()
 
 
 def to_png(raw: bytes) -> bytes:
     """Normalise any image to RGB PNG, downscaled so small models stay fast."""
-    img = Image.open(io.BytesIO(raw))
-    img = img.convert("RGB")
+    try:
+        img = Image.open(io.BytesIO(raw))
+        img.draft("RGB", (MAX_SIDE, MAX_SIDE))  # cheap downscale-on-decode for JPEGs
+        img = img.convert("RGB")
+    except Image.DecompressionBombError as e:
+        raise ValueError("Image has too many pixels") from e
+    except OSError as e:
+        raise ValueError("Not a readable image file") from e
     img.thumbnail((MAX_SIDE, MAX_SIDE))
     buf = io.BytesIO()
     img.save(buf, format="PNG")
