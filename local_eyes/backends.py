@@ -16,6 +16,8 @@ class OllamaBackend:
     def __init__(self):
         self.host = os.getenv("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
         self.model = os.getenv("OLLAMA_MODEL", "gemma4:e4b")
+        # Gemma 4 thinks by default; off is ~3x faster on CPU with the same answers for these tasks
+        self.think = os.getenv("OLLAMA_THINK", "").lower() in ("1", "true", "yes")
 
     async def generate(self, prompt: str, image_png: bytes, schema: dict) -> str:
         body = {
@@ -28,12 +30,17 @@ class OllamaBackend:
             "format": schema,  # constrained decoding to the JSON schema
             "stream": False,
             "options": {"temperature": 0},
+            "think": self.think,
         }
         try:
             async with httpx.AsyncClient(timeout=600) as client:
                 r = await client.post(f"{self.host}/api/chat", json=body)
         except httpx.ConnectError as e:
             raise BackendError(f"Cannot reach Ollama at {self.host}. Is it running? ({e})") from e
+        if r.status_code == 400 and "think" in r.text.lower() and "think" in body:
+            body.pop("think")  # model without thinking support
+            async with httpx.AsyncClient(timeout=600) as client:
+                r = await client.post(f"{self.host}/api/chat", json=body)
         if r.status_code == 404:
             raise BackendError(f"Model {self.model} is not in Ollama yet. Run: ollama pull {self.model}")
         if r.status_code != 200:

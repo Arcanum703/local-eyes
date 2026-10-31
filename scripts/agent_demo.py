@@ -27,7 +27,7 @@ async def chat(messages, tools):
     async with httpx.AsyncClient(timeout=600) as client:
         r = await client.post(f"{OLLAMA}/api/chat", json={
             "model": AGENT_MODEL, "messages": messages, "tools": tools, "stream": False,
-            "options": {"temperature": 0},
+            "options": {"temperature": 0}, "think": False,
         })
         r.raise_for_status()
         return r.json()["message"]
