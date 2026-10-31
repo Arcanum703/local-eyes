@@ -94,6 +94,10 @@ Other demo images: `demo/stacktrace.png` (try `extract_text` on it).
 | `LOCAL_EYES_CACHE` | off | `1` = same as `--cache` |
 | `LOCAL_EYES_CACHE_DIR` | `./cache` | |
 | `LOCAL_EYES_MAX_SIDE` | `1600` | images are downscaled to this before sending |
+| `LOCAL_EYES_ROOT` | unset | if set, local paths must be inside this folder |
+| `LOCAL_EYES_ALLOW_PRIVATE_URLS` | off | URLs to localhost/private networks are refused by default |
+
+Only files that decode as images are ever sent to a model (25 MB / 50 MP caps).
 
 ## License
 
