@@ -1,13 +1,16 @@
 """Local Eyes MCP server (stdio)."""
 
 import argparse
+import asyncio
 import os
+import threading
 from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
+from .backends import OllamaBackend
 from .core import ROOT, run_tool
 
 load_dotenv(Path.cwd() / ".env")
@@ -54,6 +57,9 @@ def main():
     if args.backend:
         os.environ["LOCAL_EYES_BACKEND"] = args.backend
     USE_CACHE = USE_CACHE or args.cache
+    if os.getenv("LOCAL_EYES_BACKEND", "ollama") == "ollama":
+        # Load the model in the background so the first tool call doesn't pay the load time
+        threading.Thread(target=lambda: asyncio.run(OllamaBackend().warm_up()), daemon=True).start()
     mcp.run()
 
 

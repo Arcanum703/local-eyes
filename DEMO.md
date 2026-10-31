@@ -9,7 +9,7 @@ So the stage plan is: **the eyes replay from cache, the brain runs live, Wi-Fi o
 
 **Setup before going on stage**
 - Two terminals at `local-eyes/`, large font. Close Chrome and other CPU-heavy apps. Stop the kassza demo if it isn't needed.
-- Warm the model: `ollama run gemma4:e4b "hi"` (the first load takes about 30 s or more).
+- Warm the model: start the server or agent once (Local Eyes warms Ollama on start with keep_alive 60m). Don't use `ollama run`: its different num_ctx forces a reload.
 - Check the cache is there: `ls cache` shows 2 files.
 - Have `demo/broken_form.png` open in an image viewer.
 - Backup: the recorded video of this exact run.

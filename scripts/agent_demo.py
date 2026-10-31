@@ -17,6 +17,8 @@ import httpx
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
+from local_eyes.backends import OLLAMA_KEEP_ALIVE, OLLAMA_OPTIONS
+
 OLLAMA = os.getenv("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
 AGENT_MODEL = os.getenv("AGENT_MODEL", "gemma4:e4b")
 
@@ -29,7 +31,7 @@ async def chat(messages, tools):
     async with httpx.AsyncClient(timeout=600) as client:
         async with client.stream("POST", f"{OLLAMA}/api/chat", json={
             "model": AGENT_MODEL, "messages": messages, "tools": tools, "stream": True,
-            "options": {"temperature": 0}, "think": False,
+            "options": OLLAMA_OPTIONS, "keep_alive": OLLAMA_KEEP_ALIVE, "think": False,
         }) as r:
             r.raise_for_status()
             async for line in r.aiter_lines():

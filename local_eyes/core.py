@@ -41,7 +41,7 @@ PROMPTS = {
         "List the interactive and text elements with their labels, current values and states. "
         "List every visible error, warning or validation message verbatim and which field it belongs to. "
         "List layout problems such as overlapping, cut-off, misaligned or unreadable elements. "
-        "Report only what is visible.",
+        "Report only what is visible. Be brief: at most 10 elements, the most important ones.",
     ),
 }
 

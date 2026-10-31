@@ -10,6 +10,11 @@ class BackendError(RuntimeError):
     pass
 
 
+# Every app sharing this Ollama must send identical options: a different num_ctx forces a model reload (~80 s on CPU)
+OLLAMA_OPTIONS = {"temperature": 0, "num_ctx": 8192}
+OLLAMA_KEEP_ALIVE = "60m"
+
+
 class OllamaBackend:
     name = "ollama"
 
@@ -18,6 +23,17 @@ class OllamaBackend:
         self.model = os.getenv("OLLAMA_MODEL", "gemma4:e4b")
         # Gemma 4 thinks by default; off is ~3x faster on CPU with the same answers for these tasks
         self.think = os.getenv("OLLAMA_THINK", "").lower() in ("1", "true", "yes")
+
+    async def warm_up(self) -> None:
+        """Load the model into memory with the shared options, so the first real call is fast."""
+        try:
+            async with httpx.AsyncClient(timeout=300) as client:
+                await client.post(f"{self.host}/api/chat", json={
+                    "model": self.model, "messages": [], "options": OLLAMA_OPTIONS,
+                    "keep_alive": OLLAMA_KEEP_ALIVE,
+                })
+        except httpx.HTTPError:
+            pass  # warm-up is best effort
 
     async def generate(self, prompt: str, image_png: bytes, schema: dict) -> str:
         body = {
@@ -29,7 +45,8 @@ class OllamaBackend:
             }],
             "format": schema,  # constrained decoding to the JSON schema
             "stream": False,
-            "options": {"temperature": 0},
+            "options": OLLAMA_OPTIONS,
+            "keep_alive": OLLAMA_KEEP_ALIVE,
             "think": self.think,
         }
         try:
