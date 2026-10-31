@@ -48,11 +48,28 @@ class GeminiBackend:
     def __init__(self):
         self.key = os.getenv("GEMINI_API_KEY", "").strip()
         self.model = os.getenv("GEMINI_MODEL", "gemma-4-31b-it")
+        # Tried in order when the API returns 5xx or times out (gemma-4-31b-it is often overloaded)
+        fallback = os.getenv("GEMINI_FALLBACK_MODEL", "gemma-4-26b-a4b-it")
+        self.models = [self.model] + ([fallback] if fallback and fallback != self.model else [])
+        self.timeout = float(os.getenv("GEMINI_TIMEOUT", "90"))
         self.json_mode = True  # switched off if the model rejects JSON mode
         if not self.key:
             raise BackendError("GEMINI_API_KEY is not set. Put it in local-eyes/.env")
 
     async def generate(self, prompt: str, image_png: bytes, schema: dict) -> str:
+        last_error = None
+        for model in self.models:
+            try:
+                text = await self._call(model, prompt, image_png)
+                self.model = model
+                return text
+            except (BackendError, httpx.TimeoutException) as e:
+                last_error = e
+                if isinstance(e, BackendError) and not str(e).startswith("Gemini 5"):
+                    raise
+        raise BackendError(f"All Gemini models failed; last error: {last_error}")
+
+    async def _call(self, model: str, prompt: str, image_png: bytes) -> str:
         body = {
             "contents": [{
                 "role": "user",
@@ -65,12 +82,12 @@ class GeminiBackend:
         }
         if self.json_mode:
             body["generationConfig"]["responseMimeType"] = "application/json"
-        async with httpx.AsyncClient(timeout=180) as client:
-            r = await client.post(self.url.format(model=self.model), json=body,
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            r = await client.post(self.url.format(model=model), json=body,
                                   headers={"x-goog-api-key": self.key})
-            if r.status_code == 400 and self.json_mode and "json" in r.text.lower():
-                self.json_mode = False
-                return await self.generate(prompt, image_png, schema)
+        if r.status_code == 400 and self.json_mode and "json" in r.text.lower():
+            self.json_mode = False
+            return await self._call(model, prompt, image_png)
         if r.status_code != 200:
             raise BackendError(f"Gemini {r.status_code}: {r.text[:500]}")
         data = r.json()

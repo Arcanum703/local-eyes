@@ -1,0 +1,86 @@
+{
+  "screen_summary": "A registration form for creating an account, currently displaying multiple validation errors and a misaligned button.",
+  "elements": [
+    {
+      "type": "heading",
+      "label": "Create your account",
+      "value": null,
+      "state": null
+    },
+    {
+      "type": "text",
+      "label": "Start your 14-day free trial",
+      "value": null,
+      "state": null
+    },
+    {
+      "type": "input",
+      "label": "Full name",
+      "value": "Jane Doe",
+      "state": null
+    },
+    {
+      "type": "input",
+      "label": "Email",
+      "value": "jane.doe@gmail",
+      "state": "invalid"
+    },
+    {
+      "type": "input",
+      "label": "Password",
+      "value": "•••••••",
+      "state": null
+    },
+    {
+      "type": "input",
+      "label": "Confirm password",
+      "value": "•••••••",
+      "state": "invalid"
+    },
+    {
+      "type": "input",
+      "label": "Date of birth",
+      "value": "31/10/1998",
+      "state": "invalid"
+    },
+    {
+      "type": "checkbox",
+      "label": "I agree to the Terms of Service",
+      "value": null,
+      "state": "unchecked"
+    },
+    {
+      "type": "button",
+      "label": "Create account",
+      "value": null,
+      "state": "disabled"
+    }
+  ],
+  "errors": [
+    {
+      "message": "Error 422: field \"date_of_birth\" expected format YYYY-MM-DD",
+      "element": "Date of birth",
+      "severity": "error"
+    },
+    {
+      "message": "Please enter a valid email address",
+      "element": "Email",
+      "severity": "error"
+    },
+    {
+      "message": "Passwords do not match",
+      "element": "Confirm password",
+      "severity": "error"
+    }
+  ],
+  "layout_issues": [
+    "The 'Create account' button is overlapping the bottom edge of the white form container."
+  ],
+  "_meta": {
+    "backend": "gemini",
+    "model": "gemma-4-26b-a4b-it",
+    "latency_ms": 71255,
+    "attempts": 1,
+    "cached": false
+  }
+}

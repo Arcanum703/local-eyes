@@ -45,3 +45,8 @@ def test_cache_replays_without_backend(monkeypatch, tmp_path):
     monkeypatch.setattr(core, "get_backend", boom)
     out = asyncio.run(core.run_tool("extract_text", "demo/stacktrace.png", use_cache=True))
     assert out["_meta"]["cached"] is True
+
+
+def test_parse_json_skips_reasoning_with_braces():
+    reply = 'The user wants {json}. Let me think...\n{"text": "hi", "errors": []}'
+    assert core.parse_json(reply) == {"text": "hi", "errors": []}

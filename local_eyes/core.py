@@ -127,15 +127,26 @@ def to_png(raw: bytes) -> bytes:
 
 
 def parse_json(text: str) -> dict:
+    """Pull the JSON object out of a reply, even if the model reasoned in prose first."""
     text = text.strip()
     fence = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
     if fence:
         text = fence.group(1).strip()
-    if not text.startswith("{"):
-        start, end = text.find("{"), text.rfind("}")
-        if start != -1 and end > start:
-            text = text[start:end + 1]
-    return json.loads(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as first_error:
+        # Take the largest object that parses, so a stray {brace} in reasoning doesn't win
+        decoder, best = json.JSONDecoder(), None
+        for m in re.finditer(r"\{", text):
+            try:
+                obj, end = decoder.raw_decode(text, m.start())
+            except json.JSONDecodeError:
+                continue
+            if isinstance(obj, dict) and (best is None or end - m.start() > best[0]):
+                best = (end - m.start(), obj)
+        if best is None:
+            raise first_error
+        return best[1]
 
 
 def build_prompt(tool: str, question: str | None) -> tuple[type[BaseModel], str, dict]:
