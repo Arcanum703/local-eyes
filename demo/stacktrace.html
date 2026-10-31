@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#1e1e1e;font-family:Consolas,monospace;font-size:15px;color:#d4d4d4;padding:18px}
+.bar{background:#323233;color:#ccc;padding:6px 12px;margin:-18px -18px 14px;font-family:Segoe UI;font-size:13px}
+.r{color:#f48771}.y{color:#dcdcaa}.g{color:#6a9955}
+</style></head><body>
+<div class="bar">PowerShell — kassza</div>
+<div>PS C:\dev\shop&gt; python checkout.py</div>
+<div>Traceback (most recent call last):</div>
+<div>&nbsp;&nbsp;File "C:\dev\shop\checkout.py", line 42, in &lt;module&gt;</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;total = apply_discount(cart, code="HACK25")</div>
+<div>&nbsp;&nbsp;File "C:\dev\shop\pricing.py", line 17, in apply_discount</div>
+<div>&nbsp;&nbsp;&nbsp;&nbsp;return subtotal * (1 - DISCOUNTS[code] / 100)</div>
+<div class="r">KeyError: 'HACK25'</div>
+<div class="y">WARNING: 3 items in cart have no VAT rate set (SKU-1042, SKU-1043, SKU-2001)</div>
+<div>PS C:\dev\shop&gt; _</div>
+</body></html>

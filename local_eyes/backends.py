@@ -34,6 +34,8 @@ class OllamaBackend:
                 r = await client.post(f"{self.host}/api/chat", json=body)
         except httpx.ConnectError as e:
             raise BackendError(f"Cannot reach Ollama at {self.host}. Is it running? ({e})") from e
+        if r.status_code == 404:
+            raise BackendError(f"Model {self.model} is not in Ollama yet. Run: ollama pull {self.model}")
         if r.status_code != 200:
             raise BackendError(f"Ollama {r.status_code}: {r.text[:500]}")
         return r.json()["message"]["content"]

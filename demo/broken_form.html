@@ -1,0 +1,30 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Create account</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;background:#f3f4f6;margin:0;padding:40px}
+.card{width:420px;margin:0 auto;background:#fff;border-radius:10px;padding:28px 32px;box-shadow:0 2px 12px #0002;position:relative}
+h1{font-size:24px;margin:0 0 6px}
+p.sub{color:#666;margin:0 0 18px}
+.banner{background:#fde8e8;border:1px solid #f5a3a3;color:#9b1c1c;padding:10px 12px;border-radius:6px;font-size:14px;margin-bottom:16px}
+label{display:block;font-size:14px;font-weight:600;margin:12px 0 4px}
+input{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #ccc;border-radius:6px;font-size:15px}
+input.bad{border:2px solid #e02424;background:#fff5f5}
+.err{color:#e02424;font-size:13px;margin-top:4px}
+.row{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:14px}
+.row input{width:auto}
+button{position:absolute;bottom:-18px;right:-40px;width:200px;padding:12px;background:#9ca3af;color:#e5e7eb;border:0;border-radius:6px;font-size:16px}
+</style></head>
+<body><div class="card">
+<h1>Create your account</h1>
+<p class="sub">Start your 14-day free trial</p>
+<div class="banner">Error 422: field "date_of_birth" expected format YYYY-MM-DD</div>
+<label>Full name</label><input value="Jane Doe">
+<label>Email</label><input class="bad" value="jane.doe@gmail">
+<div class="err">Please enter a valid email address</div>
+<label>Password</label><input type="password" value="hunter22">
+<label>Confirm password</label><input class="bad" type="password" value="hunter2">
+<div class="err">Passwords do not match</div>
+<label>Date of birth</label><input value="31/10/1998">
+<div class="row"><input type="checkbox"> I agree to the Terms of Service</div>
+<button disabled>Create account</button>
+</div></body></html>
