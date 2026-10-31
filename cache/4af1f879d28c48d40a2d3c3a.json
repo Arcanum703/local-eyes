@@ -1,0 +1,84 @@
+{
+  "screen_summary": "A user registration form titled 'Create your account' is displayed, showing validation errors for the date of birth and password fields.",
+  "elements": [
+    {
+      "type": "heading",
+      "label": "Create your account",
+      "value": null,
+      "state": null
+    },
+    {
+      "type": "text",
+      "label": "Start your 14-day free trial",
+      "value": null,
+      "state": null
+    },
+    {
+      "type": "input",
+      "label": "Full name",
+      "value": "Jane Doe",
+      "state": null
+    },
+    {
+      "type": "input",
+      "label": "Email",
+      "value": "jane.doe@gmail",
+      "state": null
+    },
+    {
+      "type": "input",
+      "label": "Password",
+      "value": "********",
+      "state": null
+    },
+    {
+      "type": "input",
+      "label": "Confirm password",
+      "value": "********",
+      "state": null
+    },
+    {
+      "type": "input",
+      "label": "Date of birth",
+      "value": "31/10/1998",
+      "state": null
+    },
+    {
+      "type": "checkbox",
+      "label": "I agree to the Terms of Service",
+      "value": null,
+      "state": "unchecked"
+    },
+    {
+      "type": "button",
+      "label": "Create account",
+      "value": null,
+      "state": null
+    }
+  ],
+  "errors": [
+    {
+      "message": "Error 422: field \"date_of_birth\" expected format YYYY-MM-DD",
+      "element": "Date of birth",
+      "severity": "error"
+    },
+    {
+      "message": "Please enter a valid email address",
+      "element": "Email",
+      "severity": "error"
+    },
+    {
+      "message": "Passwords do not match",
+      "element": "Confirm password",
+      "severity": "error"
+    }
+  ],
+  "layout_issues": [],
+  "_meta": {
+    "backend": "ollama",
+    "model": "gemma4:e4b",
+    "latency_ms": 118117,
+    "attempts": 1,
+    "cached": false
+  }
+}

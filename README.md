@@ -37,7 +37,9 @@ cp .env.example .env        # pick a backend; add GEMINI_API_KEY if using gemini
 ollama pull gemma4:e4b
 ```
 
-**Cloud mode (Gemini API):** set `LOCAL_EYES_BACKEND=gemini` and `GEMINI_API_KEY=...` (from [AI Studio](https://aistudio.google.com/apikey)) in `.env`. The default model is `gemma-4-31b-it`.
+**Cloud mode (Gemini API):** set `LOCAL_EYES_BACKEND=gemini` and `GEMINI_API_KEY=...` (from [AI Studio](https://aistudio.google.com/apikey)) in `.env`. The default model is `gemma-4-31b-it`. If it returns 5xx or times out (common under load), Local Eyes falls back to `gemma-4-26b-a4b-it`.
+
+**Speed:** on a CPU-only laptop, Gemma 4 E4B takes about 40–120 s per image. Gemma 4 thinks by default; Local Eyes turns that off for Ollama (`OLLAMA_THINK=1` turns it back on), which made it about 3x faster with the same answers on our demo images. A GPU makes it much faster.
 
 Try it without an MCP client:
 
@@ -73,10 +75,11 @@ With `--cache`, every validated response is saved to `cache/<hash>.json`. The ke
 `scripts/agent_demo.py` is a ~80-line agent harness. Its "brain" is any Ollama model with tool calling, and it never receives image bytes, only Local Eyes' JSON:
 
 ```bash
-AGENT_MODEL=gpt-oss:20b uv run python scripts/agent_demo.py demo/broken_form.png "Why can't the user sign up? Propose a fix." --cache
+uv run python scripts/agent_demo.py demo/broken_form.png "Why can't the user sign up? Propose a fix." --cache
+# any tool-calling Ollama model can be the brain: AGENT_MODEL=gpt-oss:20b ...
 ```
 
-The agent calls `read_ui`, learns about the invalid email, the mismatched passwords, the `422 date_of_birth expected YYYY-MM-DD` banner and the submit button hanging off the card, then proposes the fix. With Ollama it all works with Wi-Fi off.
+The agent calls `read_ui`, learns about the invalid email, the mismatched passwords and the `422 date_of_birth expected YYYY-MM-DD` banner, then proposes the fix: `1998-10-31`, add `.com`, match the passwords, tick the Terms box. (The 31B/26B models on Gemini also spot the submit button hanging off the card; E4B misses it.) With Ollama it all works with Wi-Fi off.
 
 Other demo images: `demo/stacktrace.png` (try `extract_text` on it).
 
@@ -91,6 +94,9 @@ Other demo images: `demo/stacktrace.png` (try `extract_text` on it).
 | `OLLAMA_MODEL` | `gemma4:e4b` | any Ollama vision model |
 | `GEMINI_API_KEY` | | required for `gemini` |
 | `GEMINI_MODEL` | `gemma-4-31b-it` | |
+| `GEMINI_FALLBACK_MODEL` | `gemma-4-26b-a4b-it` | tried on 5xx / timeout |
+| `GEMINI_TIMEOUT` | `90` | seconds per model attempt |
+| `OLLAMA_THINK` | off | turn Gemma 4 thinking on |
 | `LOCAL_EYES_CACHE` | off | `1` = same as `--cache` |
 | `LOCAL_EYES_CACHE_DIR` | `./cache` | |
 | `LOCAL_EYES_MAX_SIDE` | `1600` | images are downscaled to this before sending |

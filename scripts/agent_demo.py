@@ -24,13 +24,41 @@ GREY, CYAN, GREEN, RESET = "\033[90m", "\033[96m", "\033[92m", "\033[0m"
 
 
 async def chat(messages, tools):
+    """Stream the reply so the answer appears word by word; collect any tool calls."""
+    content, calls = "", []
     async with httpx.AsyncClient(timeout=600) as client:
-        r = await client.post(f"{OLLAMA}/api/chat", json={
-            "model": AGENT_MODEL, "messages": messages, "tools": tools, "stream": False,
+        async with client.stream("POST", f"{OLLAMA}/api/chat", json={
+            "model": AGENT_MODEL, "messages": messages, "tools": tools, "stream": True,
             "options": {"temperature": 0}, "think": False,
-        })
-        r.raise_for_status()
-        return r.json()["message"]
+        }) as r:
+            r.raise_for_status()
+            async for line in r.aiter_lines():
+                if not line:
+                    continue
+                msg = json.loads(line).get("message", {})
+                calls += msg.get("tool_calls") or []
+                if msg.get("content"):
+                    if not content:
+                        print(GREEN, end="")
+                    content += msg["content"]
+                    print(msg["content"], end="", flush=True)
+    if content:
+        print(RESET)
+    return {"role": "assistant", "content": content, "tool_calls": calls}
+
+
+def compact(text):
+    """Drop nulls/empties and whitespace so a CPU-bound brain reads fewer tokens."""
+    def clean(x):
+        if isinstance(x, dict):
+            return {k: clean(v) for k, v in x.items() if v not in (None, [], "") and k != "_meta"}
+        if isinstance(x, list):
+            return [clean(v) for v in x]
+        return x
+    try:
+        return json.dumps(clean(json.loads(text)), separators=(",", ":"), ensure_ascii=False)
+    except json.JSONDecodeError:
+        return text
 
 
 async def main():
@@ -56,14 +84,18 @@ async def main():
                 messages.append(msg)
                 calls = msg.get("tool_calls") or []
                 if not calls:
-                    print(f"{GREEN}{msg.get('content', '').strip()}{RESET}")
+                    print()
                     return
                 for call in calls:
                     name, args = call["function"]["name"], call["function"]["arguments"]
                     print(f"{CYAN}-> {name}({json.dumps(args)}){RESET}")
                     result = await session.call_tool(name, args)
-                    text = result.content[0].text
-                    print(f"{GREY}{text[:1200]}{RESET}\n")
+                    raw = result.content[0].text
+                    text = compact(raw)
+                    meta = {} if result.isError else json.loads(raw).get("_meta", {})
+                    print(f"{GREY}{text}")
+                    took = "replayed from cache" if meta.get("cached") else f"{meta.get('latency_ms')} ms"
+                    print(f"[eyes: {meta.get('backend')} / {meta.get('model')}, {took}]{RESET}\n")
                     messages.append({"role": "tool", "tool_name": name, "content": text})
 
 

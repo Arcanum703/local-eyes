@@ -15,6 +15,7 @@ load_dotenv(ROOT / ".env")
 
 mcp = FastMCP(
     "local-eyes",
+    log_level="WARNING",
     instructions=(
         "Local Eyes lets you see images. Pass an absolute file path (or URL). "
         "Use read_ui for screenshots of apps and web pages, extract_text for exact text/OCR, "

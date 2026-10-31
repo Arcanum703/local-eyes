@@ -1,0 +1,15 @@
+{
+  "text": "PowerShell - kassza\nPS C:\\dev\\shop> python checkout.py\nTraceback (most recent call last):\nFile \"C:\\dev\\shop\\checkout.py\", line 42, in <module>\ntotal = apply_discount(cart, code=\"HACK25\")\nFile \"C:\\dev\\shop\\pricing.py\", line 17, in apply_discount\nreturn subtotal * (1 - DISCOUNTS[code] / 100)\nKeyError: 'HACK25'\nWARNING: 3 items in cart have no VAT rate set (SKU-1042, SKU-1043, SKU-2001)\nPS C:\\dev\\shop> _",
+  "errors": [
+    "KeyError: 'HACK25'",
+    "WARNING: 3 items in cart have no VAT rate set (SKU-1042, SKU-1043, SKU-2001)"
+  ],
+  "language": "en",
+  "_meta": {
+    "backend": "ollama",
+    "model": "gemma4:e4b",
+    "latency_ms": 106768,
+    "attempts": 1,
+    "cached": false
+  }
+}
